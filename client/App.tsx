@@ -16,7 +16,7 @@ import Transactions from "./pages/Transactions";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import { NavBar } from "@/components/NavBar";
-import Sidebar from "@/components/Sidebar";
+import Layout from "@/components/Layout";
 import { UIProvider } from "@/context/UIContext";
 import { WalletProvider } from "@/context/WalletContext";
 
@@ -35,74 +35,12 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               {/* Routes that use the app shell with sidebar */}
-              <Route
-                path="/dashboard"
-                element={
-                  <div className="md:flex">
-                    <div className="md:w-60 hidden md:block">
-                      <Sidebar />
-                    </div>
-                    <div className="flex-1">
-                      <Dashboard />
-                    </div>
-                  </div>
-                }
-              />
-              <Route
-                path="/send"
-                element={
-                  <div className="md:flex">
-                    <div className="md:w-60 hidden md:block" />
-                    <div className="flex-1">
-                      <Send />
-                    </div>
-                  </div>
-                }
-              />
-              <Route
-                path="/receive"
-                element={
-                  <div className="md:flex">
-                    <div className="md:w-60 hidden md:block" />
-                    <div className="flex-1">
-                      <Receive />
-                    </div>
-                  </div>
-                }
-              />
-              <Route
-                path="/transactions"
-                element={
-                  <div className="md:flex">
-                    <div className="md:w-60 hidden md:block" />
-                    <div className="flex-1">
-                      <Transactions />
-                    </div>
-                  </div>
-                }
-              />
-              <Route
-                path="/analytics"
-                element={
-                  <div className="md:flex">
-                    <div className="md:w-60 hidden md:block" />
-                    <div className="flex-1">
-                      <Analytics />
-                    </div>
-                  </div>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <div className="md:flex">
-                    <div className="md:w-60 hidden md:block" />
-                    <div className="flex-1">
-                      <Settings />
-                    </div>
-                  </div>
-                }
-              />
+              <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+              <Route path="/send" element={<Layout><Send /></Layout>} />
+              <Route path="/receive" element={<Layout><Receive /></Layout>} />
+              <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
+              <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
+              <Route path="/settings" element={<Layout><Settings /></Layout>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

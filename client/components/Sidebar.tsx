@@ -1,3 +1,66 @@
+import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useUI } from "@/context/UIContext";
+
+const nav = [
+  { to: "/dashboard", label: "Dashboard", icon: (cls = "w-5 h-5") => (<svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M3 3h18v18H3z"/></svg>) },
+  { to: "/send", label: "Send", icon: (cls = "w-5 h-5") => (<svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 2l4 8-4-2-4 2 4-8z"/></svg>) },
+  { to: "/receive", label: "Receive", icon: (cls = "w-5 h-5") => (<svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="2"/></svg>) },
+  { to: "/transactions", label: "Transactions", icon: (cls = "w-5 h-5") => (<svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="2" d="M3 6h18M3 12h18M3 18h18"/></svg>) },
+  { to: "/settings", label: "Settings", icon: (cls = "w-5 h-5") => (<svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="2" d="M12 8v8M8 12h8"/></svg>) },
+];
+
+export default function Sidebar() {
+  const { sidebarCollapsed, toggleSidebar, mobileSidebarOpen, closeMobileSidebar } = useUI();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  return (
+    <aside className={`flex flex-col h-full bg-background border-r ${sidebarCollapsed ? 'w-16' : 'w-56'} transition-width`} aria-label="Primary navigation">
+      <div className="p-3 flex items-center justify-between">
+        {!sidebarCollapsed && <div className="font-bold">AlgoPay</div>}
+        <button aria-label="Toggle sidebar" onClick={() => toggleSidebar()} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+
+      <nav className="flex-1 px-2 py-4 space-y-1" role="navigation">
+        {nav.map((n) => (
+          <NavLink
+            key={n.to}
+            to={n.to}
+            className={({ isActive }) => `flex items-center gap-3 rounded p-2 hover:bg-muted ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}
+            onClick={() => closeMobileSidebar()}
+          >
+            <div className="flex-shrink-0">{n.icon('w-5 h-5')}</div>
+            {!sidebarCollapsed && <span className="text-sm">{n.label}</span>}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Mobile overlay handling */}
+      {isMounted && mobileSidebarOpen && (
+        <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/40" onClick={() => closeMobileSidebar()} />
+          <div className="absolute left-0 top-0 bottom-0 w-64 bg-background p-4">
+            <div className="font-bold mb-4">AlgoPay</div>
+            <div className="space-y-2">
+              {nav.map((n) => (
+                <NavLink key={n.to} to={n.to} onClick={() => closeMobileSidebar()} className={({ isActive }) => `flex items-center gap-3 p-2 rounded ${isActive ? 'bg-primary/10 text-primary' : ''}`}>
+                  {n.icon('w-5 h-5')}
+                  <span>{n.label}</span>
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </aside>
+  );
+}
 import React, { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useUI } from '@/context/UIContext';

@@ -4,6 +4,7 @@ import { formatAlgo, shortenAddress } from "@/utils/formatters";
 import { aggregateTotals } from "@/utils/mockData";
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
 import QuickAction from "@/components/QuickAction";
+import QuickActionLarge from "@/components/QuickActionLarge";
 import StatsCard from "@/components/StatsCard";
 import DashboardWidgets from "@/components/DashboardWidgets";
 import RecentTransactions from "@/components/RecentTransactions";
@@ -25,14 +26,17 @@ export default function Dashboard() {
     <div className="container max-w-7xl mx-auto py-10">
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="md:col-span-2">
-          <CardHeader className="flex-row items-center justify-between">
+          <CardHeader className="items-center">
             <CardTitle>Wallet Overview</CardTitle>
-            <button onClick={refresh} className="text-sm text-primary">Refresh</button>
+            <div>
+              <button onClick={refresh} className="text-sm text-primary">Refresh</button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="mb-6">
               <DashboardWidgets balance={balance} txnsCount={txns.length} />
             </div>
+
             <div className="mt-8 grid md:grid-cols-3 gap-6">
               <div className="h-60">
                 <ResponsiveContainer width="100%" height="100%">
@@ -57,16 +61,10 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               </div>
             </div>
+
             <div className="mt-6 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Transactions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <RecentTransactions txns={txns} onSelect={(t) => setSelected(t)} max={8} />
-                  </CardContent>
-                </Card>
+                <RecentTransactions txns={txns} onSelect={(t) => setSelected(t)} max={8} />
               </div>
               <div>
                 <Card>
@@ -74,19 +72,19 @@ export default function Dashboard() {
                     <CardTitle>Actions</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <QuickAction title="Enable Mock Wallet" description="Start with a seeded mock address and balance" onClick={() => enableMock()} />
-                    <QuickAction title="Refresh Balance" description="Pull latest balance from network" onClick={() => refresh()} />
-                    <QuickAction title="Go to Send" description="Create a new payment" onClick={() => (window.location.href = '/send')} />
+                    <QuickActionLarge title="Enable Mock Wallet" description="Start with a seeded mock address and balance" onClick={() => enableMock()} />
+                    <QuickActionLarge title="Refresh Balance" description="Pull latest balance from network" onClick={() => refresh()} />
+                    <QuickActionLarge title="Go to Send" description="Create a new payment" onClick={() => (window.location.href = '/send')} />
                   </CardContent>
                 </Card>
               </div>
             </div>
+
             {selected && (
               <TransactionDetail
                 txn={selected}
                 onClose={() => setSelected(null)}
                 onRepeat={async (t) => {
-                  // Send a mock txn repeating same amount to the counterparty
                   await sendMockTxn(t.counterparty, t.amount);
                   setSelected(null);
                 }}
@@ -94,6 +92,7 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>

@@ -3,11 +3,12 @@ import { useWallet } from "@/context/WalletContext";
 import { formatAlgo, shortenAddress } from "@/utils/formatters";
 import { aggregateTotals } from "@/utils/mockData";
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
+import QuickAction from "@/components/QuickAction";
 
 const COLORS = ["#10b981", "#06b6d4"]; // emerald, cyan
 
 export default function Dashboard() {
-  const { address, balance, txns, refresh } = useWallet();
+  const { address, balance, txns, refresh, enableMock } = useWallet();
   const totals = aggregateTotals(txns);
   const series = txns
     .slice(0, 10)
@@ -65,12 +66,12 @@ export default function Dashboard() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Quick Tips</CardTitle>
+            <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-3">
-            <p>• Connect your wallet (Pera/MyAlgo) to fetch your real balance.</p>
-            <p>• Use mock mode to explore if you don’t have TestNet funds.</p>
-            <p>• Head to Send/Receive to try payments and QR codes.</p>
+          <CardContent className="grid gap-2">
+            <QuickAction title="Enable Mock Wallet" description="Start with a seeded mock address and balance" onClick={() => enableMock()} />
+            <QuickAction title="Refresh Balance" description="Pull latest balance from network" onClick={() => refresh()} />
+            <QuickAction title="Go to Send" description="Create a new payment" onClick={() => (window.location.href = '/send')} />
           </CardContent>
         </Card>
       </div>

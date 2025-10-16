@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useUI } from '@/context/UIContext';
 
@@ -20,27 +20,45 @@ const items: { to: string; label: string; icon: () => JSX.Element }[] = [
 export default function Sidebar() {
   const { sidebarCollapsed, mobileSidebarOpen, closeMobileSidebar } = useUI();
 
+  // Animate width changes on desktop by toggling class and using transition
   const desktopClass = sidebarCollapsed ? 'w-20' : 'w-64';
+
+  // Close on Escape when mobile sidebar is open (improves accessibility)
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && mobileSidebarOpen) closeMobileSidebar();
+    }
+    if (mobileSidebarOpen) {
+      window.addEventListener('keydown', onKey);
+      return () => window.removeEventListener('keydown', onKey);
+    }
+    return;
+  }, [mobileSidebarOpen, closeMobileSidebar]);
 
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className={`${desktopClass} p-4 border-r hidden md:block bg-white dark:bg-gray-900 h-screen sticky top-16`}>
+      <aside
+        role="navigation"
+        aria-label="Main navigation"
+        className={`${desktopClass} p-4 border-r hidden md:block bg-white dark:bg-gray-900 h-screen sticky top-16 transition-all duration-200`}
+      >
         <div className="space-y-4">
           <div className="font-bold text-lg">Navigation</div>
-          <nav className="flex flex-col gap-1 text-sm">
+          <nav className="flex flex-col gap-1 text-sm" aria-hidden={mobileSidebarOpen}>
             {items.map((it) => (
               <NavLink
                 key={it.to}
                 to={it.to}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2 rounded-md transition ${
+                  `flex items-center gap-3 px-3 py-2 rounded-md transition-colors duration-150 ${
                     isActive
                       ? 'bg-primary/10 text-primary font-semibold'
                       : 'text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`
+                }
               >
-                <span className="text-muted-foreground">{it.icon()}</span>
+                <span className="text-muted-foreground" aria-hidden>{it.icon()}</span>
                 {!sidebarCollapsed && <span>{it.label}</span>}
               </NavLink>
             ))}
@@ -48,22 +66,28 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Mobile slide-over */}
-      {mobileSidebarOpen && (
-        <div className="md:hidden fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/40" onClick={closeMobileSidebar} />
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-white dark:bg-gray-900 p-4">
-            <div className="font-bold text-lg mb-4">Navigation</div>
-            <nav className="flex flex-col gap-2">
-              {items.map((it) => (
-                <NavLink key={it.to} to={it.to} onClick={() => closeMobileSidebar()} className={({ isActive }) => `px-3 py-2 rounded ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
-                  <div className="flex items-center gap-3">{it.icon()} <span>{it.label}</span></div>
-                </NavLink>
-              ))}
-            </nav>
-          </div>
+      {/* Mobile slide-over with smooth transition */}
+      <div className={`md:hidden fixed inset-0 z-50 pointer-events-${mobileSidebarOpen ? 'auto' : 'none'}`} aria-hidden={!mobileSidebarOpen}>
+        <div
+          className={`absolute inset-0 bg-black/40 transition-opacity duration-200 ${mobileSidebarOpen ? 'opacity-100' : 'opacity-0'}`}
+          onClick={closeMobileSidebar}
+        />
+        <div className={`absolute left-0 top-0 bottom-0 w-64 bg-white dark:bg-gray-900 p-4 transform transition-transform duration-200 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="font-bold text-lg mb-4">Navigation</div>
+          <nav className="flex flex-col gap-2">
+            {items.map((it) => (
+              <NavLink
+                key={it.to}
+                to={it.to}
+                onClick={() => closeMobileSidebar()}
+                className={({ isActive }) => `px-3 py-2 rounded ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+              >
+                <div className="flex items-center gap-3">{it.icon()} <span>{it.label}</span></div>
+              </NavLink>
+            ))}
+          </nav>
         </div>
-      )}
+      </div>
     </>
   );
 }

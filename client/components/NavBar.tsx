@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useWallet } from "@/context/WalletContext";
 import { shortenAddress } from "@/utils/formatters";
+import { formatAlgo } from "@/utils/formatters";
 
 const links = [
   { to: "/", label: "Home" },
@@ -34,8 +35,11 @@ export function NavBar() {
         </div>
         <div className="flex items-center gap-2">
           {address ? (
-            <div className="flex items-center gap-2">
-              <span className="hidden sm:inline text-sm text-muted-foreground">{provider?.toUpperCase()}</span>
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex flex-col items-end text-right">
+                <span className="text-xs text-muted-foreground">{provider?.toUpperCase()}</span>
+                <span className="text-sm font-medium">{formatAlgo(balance, { maximumFractionDigits: 4 })}</span>
+              </div>
               <Button variant="secondary" className="font-mono">{shortenAddress(address, 6)}</Button>
               <Button variant="ghost" onClick={disconnect}>Disconnect</Button>
             </div>

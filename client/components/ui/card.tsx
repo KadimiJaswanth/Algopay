@@ -1,3 +1,38 @@
+import React from 'react';
+
+type CardProps = React.HTMLAttributes<HTMLDivElement> & {
+  children?: React.ReactNode;
+};
+
+export function Card({ children, className = '', ...rest }: CardProps) {
+  return (
+    <div className={`p-4 rounded-lg border bg-white dark:bg-gray-800 ${className}`} {...rest}>
+      {children}
+    </div>
+  );
+}
+
+export function CardHeader({ children, className = '', ...rest }: CardProps) {
+  return (
+    <div className={`flex items-center justify-between ${className}`} {...rest}>
+      {children}
+    </div>
+  );
+}
+
+export function CardContent({ children, className = '', ...rest }: CardProps) {
+  return (
+    <div className={`mt-2 ${className}`} {...rest}>
+      {children}
+    </div>
+  );
+}
+
+export function CardTitle({ children }: { children?: React.ReactNode }) {
+  return <div className="text-lg font-semibold">{children}</div>;
+}
+
+export default Card;
 import * as React from "react";
 
 import { cn } from "@/lib/utils";

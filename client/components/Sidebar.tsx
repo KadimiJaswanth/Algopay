@@ -1,3 +1,117 @@
+import React, { useEffect, useRef } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { useUI } from '@/context/UIContext';
+
+const ITEMS = [
+  { to: '/dashboard', label: 'Dashboard', icon: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M3 6h18M3 18h18"/></svg>) },
+  { to: '/send', label: 'Send', icon: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" /></svg>) },
+  { to: '/receive', label: 'Receive', icon: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7"/><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M7 10l5-5 5 5"/></svg>) },
+  { to: '/transactions', label: 'Transactions', icon: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18M3 17h18"/></svg>) },
+  { to: '/analytics', label: 'Analytics', icon: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M11 3v18M20 9v6M2 15v3"/></svg>) },
+  { to: '/settings', label: 'Settings', icon: () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3"/></svg>) },
+];
+
+export default function Sidebar() {
+  const { sidebarCollapsed, mobileSidebarOpen, closeMobileSidebar } = useUI();
+  const location = useLocation();
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+
+  useEffect(() => {
+    // Close mobile overlay on escape globally
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && mobileSidebarOpen) closeMobileSidebar();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileSidebarOpen, closeMobileSidebar]);
+
+  useEffect(() => {
+    // When route changes on mobile, close overlay
+    if (mobileSidebarOpen) closeMobileSidebar();
+  }, [location.pathname]);
+
+  // Keyboard navigation handler for arrow keys + Home/End
+  const onKeyDownNav = (e: React.KeyboardEvent) => {
+    const focusIndex = linkRefs.current.findIndex((el) => document.activeElement === el);
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = Math.min(linkRefs.current.length - 1, Math.max(0, focusIndex + 1));
+      linkRefs.current[next]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = Math.max(0, focusIndex - 1);
+      linkRefs.current[prev]?.focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      linkRefs.current[0]?.focus();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      linkRefs.current[linkRefs.current.length - 1]?.focus();
+    }
+  };
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside
+        role="navigation"
+        aria-label="Primary"
+        className={`${sidebarCollapsed ? 'w-20' : 'w-64'} p-4 border-r hidden md:block bg-background h-screen sticky top-16 transition-all`}
+      >
+        <div className="mb-4 font-semibold">AlgoPay</div>
+        <div ref={listRef} onKeyDown={onKeyDownNav} role="list" aria-label="Main navigation" className="flex flex-col gap-1">
+          {ITEMS.map((it, i) => (
+            <NavLink
+              key={it.to}
+              to={it.to}
+              role="listitem"
+              ref={(el: HTMLAnchorElement | null) => (linkRefs.current[i] = el)}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-md transition-colors duration-150 ${
+                  isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`
+              }
+              aria-current={({ isActive }: any) => (isActive ? 'page' : undefined)}
+            >
+              <span aria-hidden className="flex-shrink-0">{it.icon()}</span>
+              {!sidebarCollapsed && <span>{it.label}</span>}
+            </NavLink>
+          ))}
+        </div>
+      </aside>
+
+      {/* Mobile slide-over */}
+      <div className={`md:hidden fixed inset-0 z-50 ${mobileSidebarOpen ? '' : 'pointer-events-none'}`} aria-hidden={!mobileSidebarOpen}>
+        <div
+          className={`absolute inset-0 bg-black/40 transition-opacity ${mobileSidebarOpen ? 'opacity-100' : 'opacity-0'}`}
+          onClick={closeMobileSidebar}
+          aria-hidden
+        />
+        <div
+          className={`absolute left-0 top-0 bottom-0 w-64 bg-background p-4 transform transition-transform ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile navigation"
+        >
+          <div className="mb-4 font-semibold">AlgoPay</div>
+          <nav className="flex flex-col gap-2">
+            {ITEMS.map((it) => (
+              <NavLink
+                key={it.to}
+                to={it.to}
+                onClick={() => closeMobileSidebar()}
+                className={({ isActive }) => `px-3 py-2 rounded ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+              >
+                <div className="flex items-center gap-3">{it.icon()} <span>{it.label}</span></div>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      </div>
+    </>
+  );
+}
 import { NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useUI } from "@/context/UIContext";

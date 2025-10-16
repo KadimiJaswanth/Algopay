@@ -5,6 +5,7 @@ import { useWallet } from "@/context/WalletContext";
 import { shortenAddress } from "@/utils/formatters";
 import { formatAlgo } from "@/utils/formatters";
 import { useUI } from "@/context/UIContext";
+import BalancePopover from "@/components/BalancePopover";
 
 const links = [
   { to: "/", label: "Home" },
@@ -48,7 +49,7 @@ export function NavBar() {
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex flex-col items-end text-right">
                 <span className="text-xs text-muted-foreground">{provider?.toUpperCase()}</span>
-                <span className="text-sm font-medium">{formatAlgo(balance, { maximumFractionDigits: 4 })}</span>
+                <BalancePopover />
               </div>
               <Button variant="secondary" className="font-mono">{shortenAddress(address, 6)}</Button>
               <Button variant="ghost" onClick={disconnect}>Disconnect</Button>

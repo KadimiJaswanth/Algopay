@@ -17,6 +17,7 @@ import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import { NavBar } from "@/components/NavBar";
 import Sidebar from "@/components/Sidebar";
+import { UIProvider } from "@/context/UIContext";
 import { WalletProvider } from "@/context/WalletContext";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <WalletProvider>
+          <UIProvider>
           <BrowserRouter>
             <NavBar />
             <Routes>
@@ -105,6 +107,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+          </UIProvider>
         </WalletProvider>
       </TooltipProvider>
     </ThemeProvider>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useUI } from '@/context/UIContext';
 
 const items: { to: string; label: string; icon: () => JSX.Element }[] = [
   {
@@ -17,28 +18,52 @@ const items: { to: string; label: string; icon: () => JSX.Element }[] = [
 ];
 
 export default function Sidebar() {
+  const { sidebarCollapsed, mobileSidebarOpen, closeMobileSidebar } = useUI();
+
+  const desktopClass = sidebarCollapsed ? 'w-20' : 'w-64';
+
   return (
-    <aside className="w-64 p-4 border-r hidden md:block bg-white dark:bg-gray-900 h-screen sticky top-16">
-      <div className="space-y-4">
-        <div className="font-bold text-lg">Navigation</div>
-        <nav className="flex flex-col gap-1 text-sm">
-          {items.map((it) => (
-            <NavLink
-              key={it.to}
-              to={it.to}
-              className={({ isActive }) =>
+    <>
+      {/* Desktop sidebar */}
+      <aside className={`${desktopClass} p-4 border-r hidden md:block bg-white dark:bg-gray-900 h-screen sticky top-16`}>
+        <div className="space-y-4">
+          <div className="font-bold text-lg">Navigation</div>
+          <nav className="flex flex-col gap-1 text-sm">
+            {items.map((it) => (
+              <NavLink
+                key={it.to}
+                to={it.to}
+                className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-md transition ${
                     isActive
                       ? 'bg-primary/10 text-primary font-semibold'
                       : 'text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
+                  }`
               >
-              <span className="text-muted-foreground">{it.icon()}</span>
-              <span>{it.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-      </div>
-    </aside>
+                <span className="text-muted-foreground">{it.icon()}</span>
+                {!sidebarCollapsed && <span>{it.label}</span>}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      </aside>
+
+      {/* Mobile slide-over */}
+      {mobileSidebarOpen && (
+        <div className="md:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/40" onClick={closeMobileSidebar} />
+          <div className="absolute left-0 top-0 bottom-0 w-64 bg-white dark:bg-gray-900 p-4">
+            <div className="font-bold text-lg mb-4">Navigation</div>
+            <nav className="flex flex-col gap-2">
+              {items.map((it) => (
+                <NavLink key={it.to} to={it.to} onClick={() => closeMobileSidebar()} className={({ isActive }) => `px-3 py-2 rounded ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
+                  <div className="flex items-center gap-3">{it.icon()} <span>{it.label}</span></div>
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

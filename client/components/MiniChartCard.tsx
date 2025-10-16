@@ -1,5 +1,6 @@
 import React from 'react';
 import { ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { Card, CardContent } from './ui/card';
 
 type Props = {
   title: string;
@@ -9,7 +10,7 @@ type Props = {
 
 export default function MiniChartCard({ title, value, data }: Props) {
   return (
-    <div className="p-3 rounded-lg border bg-white dark:bg-gray-800">
+    <Card>
       <div className="flex items-center justify-between">
         <div>
           <div className="text-sm text-muted-foreground">{title}</div>
@@ -23,6 +24,7 @@ export default function MiniChartCard({ title, value, data }: Props) {
           </ResponsiveContainer>
         </div>
       </div>
-    </div>
+      <CardContent />
+    </Card>
   );
 }

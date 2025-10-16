@@ -5,6 +5,7 @@ import { aggregateTotals } from "@/utils/mockData";
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
 import QuickAction from "@/components/QuickAction";
 import StatsCard from "@/components/StatsCard";
+import DashboardWidgets from "@/components/DashboardWidgets";
 import RecentTransactions from "@/components/RecentTransactions";
 import TransactionDetail from "@/components/TransactionDetail";
 import { useState } from 'react';
@@ -29,10 +30,8 @@ export default function Dashboard() {
             <button onClick={refresh} className="text-sm text-primary">Refresh</button>
           </CardHeader>
           <CardContent>
-            <div className="grid sm:grid-cols-3 gap-4">
-              <StatsCard title="Address" value={<span className="font-mono">{shortenAddress(address ?? 'Not connected', 8)}</span>} description={address ? 'Connected address' : 'Not connected'} />
-              <StatsCard title="Balance" value={<span className="text-2xl font-semibold">{formatAlgo(balance)}</span>} description="Current ALGO balance" />
-              <StatsCard title="Transactions" value={<span className="text-2xl font-semibold">{txns.length}</span>} description={`Last ${Math.min(txns.length, 18)} transactions`} />
+            <div className="mb-6">
+              <DashboardWidgets balance={balance} txnsCount={txns.length} />
             </div>
             <div className="mt-8 grid md:grid-cols-3 gap-6">
               <div className="h-60">

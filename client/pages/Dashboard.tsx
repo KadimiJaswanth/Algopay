@@ -5,11 +5,15 @@ import { aggregateTotals } from "@/utils/mockData";
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
 import QuickAction from "@/components/QuickAction";
 import StatsCard from "@/components/StatsCard";
+import RecentTransactions from "@/components/RecentTransactions";
+import TransactionDetail from "@/components/TransactionDetail";
+import { useState } from 'react';
 
 const COLORS = ["#10b981", "#06b6d4"]; // emerald, cyan
 
 export default function Dashboard() {
-  const { address, balance, txns, refresh, enableMock } = useWallet();
+  const { address, balance, txns, refresh, enableMock, sendMockTxn } = useWallet();
+  const [selected, setSelected] = useState<null | typeof txns[0]>(null);
   const totals = aggregateTotals(txns);
   const series = txns
     .slice(0, 10)
@@ -30,7 +34,7 @@ export default function Dashboard() {
               <StatsCard title="Balance" value={<span className="text-2xl font-semibold">{formatAlgo(balance)}</span>} description="Current ALGO balance" />
               <StatsCard title="Transactions" value={<span className="text-2xl font-semibold">{txns.length}</span>} description={`Last ${Math.min(txns.length, 18)} transactions`} />
             </div>
-            <div className="mt-8 grid md:grid-cols-2 gap-6">
+            <div className="mt-8 grid md:grid-cols-3 gap-6">
               <div className="h-60">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -43,7 +47,7 @@ export default function Dashboard() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="h-60">
+              <div className="h-60 md:col-span-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={series}>
                     <XAxis dataKey="name" hide />
@@ -54,6 +58,41 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               </div>
             </div>
+            <div className="mt-6 grid md:grid-cols-3 gap-6">
+              <div className="md:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Transactions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <RecentTransactions txns={txns} onSelect={(t) => setSelected(t)} max={8} />
+                  </CardContent>
+                </Card>
+              </div>
+              <div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <QuickAction title="Enable Mock Wallet" description="Start with a seeded mock address and balance" onClick={() => enableMock()} />
+                    <QuickAction title="Refresh Balance" description="Pull latest balance from network" onClick={() => refresh()} />
+                    <QuickAction title="Go to Send" description="Create a new payment" onClick={() => (window.location.href = '/send')} />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+            {selected && (
+              <TransactionDetail
+                txn={selected}
+                onClose={() => setSelected(null)}
+                onRepeat={async (t) => {
+                  // Send a mock txn repeating same amount to the counterparty
+                  await sendMockTxn(t.counterparty, t.amount);
+                  setSelected(null);
+                }}
+              />
+            )}
           </CardContent>
         </Card>
         <Card>

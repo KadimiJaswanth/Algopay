@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import QRCode from 'react-qr-code';
 import { Button } from './ui/button';
 import { copyToClipboard } from '@/utils/clipboardCopy';
@@ -10,11 +10,13 @@ interface ReceiveQRProps {
 
 export const ReceiveQR: React.FC<ReceiveQRProps> = ({ address }) => {
   const { toast } = useToast();
+  const copyBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const handleCopy = async () => {
     const ok = await copyToClipboard(address);
     if (ok) {
       toast({ title: 'Address copied', description: 'Wallet address copied to clipboard.' });
+      copyBtnRef.current?.focus();
     } else {
       toast({ title: 'Copy failed', description: 'Could not copy address to clipboard.' });
     }
@@ -40,15 +42,15 @@ export const ReceiveQR: React.FC<ReceiveQRProps> = ({ address }) => {
   };
 
   return (
-    <div className="w-full max-w-sm mx-auto text-center">
-      <div className="bg-white p-4 rounded-md shadow-sm inline-block">
+    <div className="w-full max-w-sm mx-auto text-center" role="region" aria-label="Receive address QR">
+      <div className="bg-white p-4 rounded-md shadow-sm inline-block transform transition-transform duration-150 hover:scale-[1.02] focus-within:scale-[1.02]" tabIndex={-1}>
         <QRCode value={address} size={160} />
       </div>
       <div className="mt-4 space-y-2">
-        <div className="font-mono text-sm break-all">{address}</div>
+        <div className="font-mono text-sm break-all" aria-live="polite">{address}</div>
         <div className="flex gap-2 justify-center">
-          <Button onClick={handleCopy} size="sm">Copy address</Button>
-          <Button onClick={handleShare} variant="secondary" size="sm">Share</Button>
+          <Button ref={copyBtnRef as any} onClick={handleCopy} size="sm" aria-label="Copy address">Copy address</Button>
+          <Button onClick={handleShare} variant="secondary" size="sm" aria-label="Share address">Share</Button>
         </div>
       </div>
     </div>

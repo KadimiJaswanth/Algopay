@@ -7,6 +7,8 @@ import { PeraWalletConnect } from "@perawallet/connect";
 import MyAlgoConnect from "@randlabs/myalgo-connect";
 
 export type WalletProvider = "pera" | "myalgo" | "mock";
+export type Network = "mainnet" | "testnet";
+export type TxnStatus = "pending" | "confirmed" | "failed";
 
 export interface WalletState {
   address: string | null;
@@ -14,6 +16,7 @@ export interface WalletState {
   balance: number | null; // in ALGO
   isConnecting: boolean;
   txns: Txn[];
+  network?: Network;
 }
 
 interface WalletContextValue extends WalletState {
@@ -23,7 +26,8 @@ interface WalletContextValue extends WalletState {
   enableMock: () => void;
   refresh: () => Promise<void>;
   sendMockTxn: (to: string, amount: number) => Promise<Txn>;
-  switchNetwork: (network: 'mainnet' | 'testnet') => void;
+  topUpMock: (amount: number) => Promise<Txn>;
+  switchNetwork: (network: Network) => void;
 }
 
 const WalletContext = createContext<WalletContextValue | undefined>(undefined);
@@ -37,6 +41,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     balance: null,
     isConnecting: false,
     txns: generateMockTxns(),
+    network: "testnet",
   });
 
   useEffect(() => {
@@ -48,12 +53,17 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      // Persist only minimal wallet info to avoid large payloads
-      JSON.stringify({ address: state.address, provider: state.provider, balance: state.balance }),
-    );
-  }, [state.address, state.provider, state.balance, state.txns]);
+    // Persist minimal wallet info plus recent txns and selected network
+    const payload = {
+      address: state.address,
+      provider: state.provider,
+      balance: state.balance,
+      network: state.network,
+      // persist only last 25 txns to avoid huge localStorage entries
+      txns: state.txns.slice(0, 25),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  }, [state.address, state.provider, state.balance, state.txns, state.network]);
 
   const disconnect = useCallback(() => {
     setState({ address: null, provider: null, balance: null, isConnecting: false, txns: generateMockTxns() });
@@ -109,31 +119,63 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const enableMock = useCallback(() => {
-    setState({ address: "MOCK-ADDRESS-ALGO-PAY", provider: "mock", balance: Number((Math.random() * 50 + 10).toFixed(4)), isConnecting: false, txns: generateMockTxns() });
+    setState({
+      address: "MOCK-ADDRESS-ALGO-PAY",
+      provider: "mock",
+      balance: Number((Math.random() * 50 + 10).toFixed(4)),
+      isConnecting: false,
+      txns: generateMockTxns(),
+      network: "testnet",
+    });
     toast("Mock wallet enabled");
   }, []);
 
   const sendMockTxn = useCallback(async (to: string, amount: number) => {
-    // Simulate a short delay
-    await new Promise((r) => setTimeout(r, 600));
-    const txn: Txn = {
+    // Basic validation
+    if (!to || amount <= 0) {
+      toast.error("Invalid recipient or amount");
+      throw new Error("Invalid recipient or amount");
+    }
+    // Simulate network latency and optimistic pending state
+    const pending: Txn = {
       id: `TX-${Math.random().toString(36).slice(2, 10)}`,
       type: 'out',
       amount,
       counterparty: to,
       timestamp: Date.now(),
     };
-    setState((s) => ({ ...s, txns: [txn, ...s.txns], balance: s.balance != null ? Number((s.balance - amount).toFixed(6)) : s.balance }));
-    toast.success("Mock transaction sent");
-    return txn;
-  }, [state.txns, state.balance]);
+    setState((s) => ({ ...s, txns: [pending, ...s.txns] }));
+    toast("Transaction submitted", { duration: 2000 });
+    // Simulate confirmation after delay
+    await new Promise((r) => setTimeout(r, 900));
+    setState((s) => ({ ...s, txns: s.txns.map((t) => (t.id === pending.id ? pending : t)), balance: s.balance != null ? Number((s.balance - amount).toFixed(6)) : s.balance }));
+    toast.success("Mock transaction confirmed");
+    return pending;
+  }, []);
 
-  const switchNetwork = useCallback((network: 'mainnet' | 'testnet') => {
-    // purely mock: just notify user
+  const topUpMock = useCallback(async (amount: number) => {
+    if (amount <= 0) {
+      toast.error("Invalid amount");
+      throw new Error("Invalid amount");
+    }
+    const incoming: Txn = {
+      id: `TX-${Math.random().toString(36).slice(2, 10)}`,
+      type: 'in',
+      amount,
+      counterparty: 'FAUCET',
+      timestamp: Date.now(),
+    };
+    setState((s) => ({ ...s, txns: [incoming, ...s.txns], balance: s.balance != null ? Number((s.balance + amount).toFixed(6)) : amount }));
+    toast.success(`Received ${amount} ALGO (mock)`);
+    return incoming;
+  }, []);
+
+  const switchNetwork = useCallback((network: Network) => {
+    setState((s) => ({ ...s, network }));
     toast(`Switched to ${network}`);
   }, []);
 
-  const value = useMemo<WalletContextValue>(() => ({ ...state, connectPera, connectMyAlgo, disconnect, enableMock, refresh, sendMockTxn, switchNetwork }), [state, connectPera, connectMyAlgo, disconnect, enableMock, refresh, sendMockTxn, switchNetwork]);
+  const value = useMemo<WalletContextValue>(() => ({ ...state, connectPera, connectMyAlgo, disconnect, enableMock, refresh, sendMockTxn, topUpMock, switchNetwork }), [state, connectPera, connectMyAlgo, disconnect, enableMock, refresh, sendMockTxn, topUpMock, switchNetwork]);
 
   return <WalletContext.Provider value={value}>{children}<Toaster /></WalletContext.Provider>;
 }

@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useWallet } from '@/context/WalletContext';
 import { formatAlgo } from '@/utils/formatters';
+import { pasteFromClipboard } from '@/utils/clipboard';
+import QrScanPlaceholder from '@/components/QrScanPlaceholder';
 
 export default function Send() {
 	const { address, balance, sendMockTxn } = useWallet();
@@ -58,7 +60,13 @@ export default function Send() {
 					<form onSubmit={handleSubmit} className="space-y-4">
 						<div>
 							<label className="text-sm">Recipient address</label>
-							<Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="Enter ALGO address or paste" />
+								<div className="flex gap-2">
+									<Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="Enter ALGO address or paste" />
+									<div className="flex flex-col gap-2 w-40">
+										<Button variant="outline" onClick={async () => { const t = await pasteFromClipboard(); if (t) setTo(t); }}>Paste</Button>
+										<Button variant="outline" onClick={() => { /* open small scanner placeholder - simulate */ setTo(''); }}>Scan</Button>
+									</div>
+								</div>
 							{errors.to && <div className="text-xs text-red-600 mt-1">{errors.to}</div>}
 						</div>
 
@@ -67,6 +75,8 @@ export default function Send() {
 							<Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 1.234" />
 							{errors.amount && <div className="text-xs text-red-600 mt-1">{errors.amount}</div>}
 							{balance != null && <div className="text-xs text-muted-foreground mt-1">Balance: {formatAlgo(balance)}</div>}
+										{/* fee estimate */}
+										<FeeEstimate amount={Number(amount) || 0} />
 						</div>
 
 						<div>
@@ -81,6 +91,11 @@ export default function Send() {
 					</form>
 				</CardContent>
 			</Card>
+
+						{/* QR scan modal/placeholder for now */}
+						<div className="mt-4">
+							<QrScanPlaceholder onScan={(val) => setTo(val)} />
+						</div>
 
 			<Dialog open={confirmOpen} onOpenChange={(o) => setConfirmOpen(o)}>
 				<DialogContent>

@@ -22,6 +22,8 @@ interface WalletContextValue extends WalletState {
   disconnect: () => void;
   enableMock: () => void;
   refresh: () => Promise<void>;
+  sendMockTxn: (to: string, amount: number) => Promise<Txn>;
+  switchNetwork: (network: 'mainnet' | 'testnet') => void;
 }
 
 const WalletContext = createContext<WalletContextValue | undefined>(undefined);
@@ -48,7 +50,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ address: state.address, provider: state.provider, balance: state.balance, isConnecting: false, txns: state.txns }),
+      // Persist only minimal wallet info to avoid large payloads
+      JSON.stringify({ address: state.address, provider: state.provider, balance: state.balance }),
     );
   }, [state.address, state.provider, state.balance, state.txns]);
 
@@ -110,7 +113,27 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     toast("Mock wallet enabled");
   }, []);
 
-  const value = useMemo<WalletContextValue>(() => ({ ...state, connectPera, connectMyAlgo, disconnect, enableMock, refresh }), [state, connectPera, connectMyAlgo, disconnect, enableMock, refresh]);
+  const sendMockTxn = useCallback(async (to: string, amount: number) => {
+    // Simulate a short delay
+    await new Promise((r) => setTimeout(r, 600));
+    const txn: Txn = {
+      id: `TX-${Math.random().toString(36).slice(2, 10)}`,
+      type: 'out',
+      amount,
+      counterparty: to,
+      timestamp: Date.now(),
+    };
+    setState((s) => ({ ...s, txns: [txn, ...s.txns], balance: s.balance != null ? Number((s.balance - amount).toFixed(6)) : s.balance }));
+    toast.success("Mock transaction sent");
+    return txn;
+  }, [state.txns, state.balance]);
+
+  const switchNetwork = useCallback((network: 'mainnet' | 'testnet') => {
+    // purely mock: just notify user
+    toast(`Switched to ${network}`);
+  }, []);
+
+  const value = useMemo<WalletContextValue>(() => ({ ...state, connectPera, connectMyAlgo, disconnect, enableMock, refresh, sendMockTxn, switchNetwork }), [state, connectPera, connectMyAlgo, disconnect, enableMock, refresh, sendMockTxn, switchNetwork]);
 
   return <WalletContext.Provider value={value}>{children}<Toaster /></WalletContext.Provider>;
 }

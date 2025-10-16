@@ -44,3 +44,14 @@ Next steps:
 
 - Add an option to download the QR as an image.
 - Integrate a small scanner component (feature 8) to allow local scanning for desktop webcam testing.
+
+Unit tests added:
+
+ - `client/utils/qr.spec.ts` - Vitest test to verify SVG -> PNG conversion.
+
+How to run tests locally:
+
+```
+pnpm test -- client/utils/qr.spec.ts
+```
+

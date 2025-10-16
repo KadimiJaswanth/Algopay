@@ -6,6 +6,16 @@ import { shortenAddress } from "@/utils/formatters";
 import { formatAlgo } from "@/utils/formatters";
 import { useUI } from "@/context/UIContext";
 import BalancePopover from "@/components/BalancePopover";
+import { useCallback } from "react";
+
+// Small test helper exported for e2e/unit tests to pick stable test ids
+export const getNavBarTestIds = () => ({
+  connectPera: 'nav-connect-pera',
+  connectMyAlgo: 'nav-connect-myalgo',
+  connectMock: 'nav-connect-mock',
+  disconnect: 'nav-disconnect',
+  balance: 'nav-balance',
+});
 
 const links = [
   { to: "/", label: "Home" },
@@ -20,6 +30,15 @@ const links = [
 export function NavBar() {
   const { address, provider, connectPera, connectMyAlgo, enableMock, disconnect, isConnecting, balance } = useWallet();
   const { toggleSidebar, openMobileSidebar } = useUI();
+
+  const ids = getNavBarTestIds();
+
+  const handleKeyPress = useCallback((e: React.KeyboardEvent, fn: () => void) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fn();
+    }
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -48,17 +67,27 @@ export function NavBar() {
           {address ? (
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex flex-col items-end text-right">
-                <span className="text-xs text-muted-foreground">{provider?.toUpperCase()}</span>
-                <BalancePopover />
+                <span className="text-xs text-muted-foreground" aria-hidden>{provider?.toUpperCase()}</span>
+                <div data-testid={ids.balance} aria-label={`Balance ${balance != null ? formatAlgo(balance) : 'unknown'}`}>
+                  <BalancePopover />
+                </div>
               </div>
-              <Button variant="secondary" className="font-mono">{shortenAddress(address, 6)}</Button>
-              <Button variant="ghost" onClick={disconnect}>Disconnect</Button>
+              <Button variant="secondary" className="font-mono" aria-label={`Account ${address}`}>{shortenAddress(address, 6)}</Button>
+              <Button
+                variant="ghost"
+                onClick={() => disconnect()}
+                onKeyDown={(e) => handleKeyPress(e, () => disconnect())}
+                aria-label="Disconnect wallet"
+                data-testid={ids.disconnect}
+              >
+                Disconnect
+              </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Button onClick={connectPera} disabled={isConnecting}>Connect Pera</Button>
-              <Button variant="secondary" onClick={connectMyAlgo} disabled={isConnecting}>MyAlgo</Button>
-              <Button variant="ghost" onClick={enableMock}>Mock</Button>
+              <Button data-testid={ids.connectPera} onClick={connectPera} disabled={isConnecting} onKeyDown={(e) => handleKeyPress(e, connectPera)} aria-label="Connect with Pera">Connect Pera</Button>
+              <Button data-testid={ids.connectMyAlgo} variant="secondary" onClick={connectMyAlgo} disabled={isConnecting} onKeyDown={(e) => handleKeyPress(e, connectMyAlgo)} aria-label="Connect with MyAlgo">MyAlgo</Button>
+              <Button data-testid={ids.connectMock} variant="ghost" onClick={enableMock} onKeyDown={(e) => handleKeyPress(e, enableMock)} aria-label="Enable mock wallet">Mock</Button>
             </div>
           )}
           <ThemeToggle />

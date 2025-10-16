@@ -1,3 +1,15 @@
+import Sidebar from "@/components/Sidebar";
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="md:flex">
+      <div className="md:w-60 hidden md:block">
+        <Sidebar />
+      </div>
+      <main className="flex-1 p-4">{children}</main>
+    </div>
+  );
+}
 import React from 'react';
 import { NavBar } from './NavBar';
 

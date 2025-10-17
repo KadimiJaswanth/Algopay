@@ -19,6 +19,8 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onScan }) => {
   const [permission, setPermission] = useState<'prompt' | 'granted' | 'denied' | 'unknown'>('unknown');
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [roiSize, setRoiSize] = useState<number>(0.6); // fraction of shorter side
+  const [lastCapture, setLastCapture] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -164,12 +166,49 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onScan }) => {
 
       {error && <div role="alert" className="text-sm text-destructive">{error}</div>}
 
-      <div className="w-full rounded-md overflow-hidden bg-black/5">
+      <div className="relative w-full rounded-md overflow-hidden bg-black/5">
         <video ref={videoRef} className="w-full h-auto" playsInline muted />
+        {/* ROI overlay: centered square */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div
+            aria-hidden
+            className="border-2 border-dashed border-white/70 bg-white/10"
+            style={{ width: `${Math.round(roiSize * 100)}%`, height: `${Math.round(roiSize * 100)}%`, maxWidth: 'min(80%, 480px)', maxHeight: 'min(80%, 480px)' }}
+          />
+        </div>
       </div>
 
       <div className="text-xs text-muted-foreground">
         Permission: {permission} · Scanning: {String(scanning)}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <label className="text-sm">ROI size</label>
+        <input aria-label="ROI size" type="range" min={0.2} max={1} step={0.05} value={roiSize} onChange={(e) => setRoiSize(Number(e.target.value))} />
+        <Button onClick={async () => {
+          if (!videoRef.current) return;
+          const video = videoRef.current;
+          const canvas = document.createElement('canvas');
+          const vw = video.videoWidth || 320;
+          const vh = video.videoHeight || 240;
+          const size = Math.min(vw, vh) * roiSize;
+          const sx = Math.max(0, Math.floor((vw - size) / 2));
+          const sy = Math.max(0, Math.floor((vh - size) / 2));
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+          ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
+          const dataUrl = canvas.toDataURL('image/png');
+          setLastCapture(dataUrl);
+          const a = document.createElement('a');
+          a.href = dataUrl;
+          a.download = `capture-${Date.now()}.png`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        }}>Capture & Download</Button>
+        {lastCapture && <a href={lastCapture} download className="text-sm text-muted-foreground">Last capture</a>}
       </div>
     </div>
   );

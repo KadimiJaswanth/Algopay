@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { decodeFromCanvas } from '@/utils/zxing';
 
 interface CameraScannerProps {
   onScan: (value: string) => void;
@@ -104,8 +105,30 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onScan }) => {
         }
       }
 
-      // Fallback: if BarcodeDetector not available, we can still show camera preview and ask user to use simulate or external scanner.
-      toast({ title: 'Camera started', description: 'Camera started. If decoding is not available in your browser, use the simulate button.' });
+      // Fallback: if BarcodeDetector not available, capture frames to a canvas and use ZXing to decode
+      try {
+        const canvas = document.createElement('canvas');
+        pollRef.current = window.setInterval(async () => {
+          try {
+            if (!videoRef.current) return;
+            const video = videoRef.current;
+            canvas.width = video.videoWidth || 320;
+            canvas.height = video.videoHeight || 240;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const decoded = await decodeFromCanvas(canvas);
+            if (decoded) {
+              onScan(String(decoded));
+            }
+          } catch (err) {
+            // ignore frame decode errors
+          }
+        }, 600);
+        toast({ title: 'Camera started', description: 'Camera started. Using fallback JS decoder.' });
+      } catch (err) {
+        toast({ title: 'Camera started', description: 'Camera started. If decoding is not available in your browser, use the simulate button.' });
+      }
     } catch (err: any) {
       console.error(err);
       setPermission('denied');

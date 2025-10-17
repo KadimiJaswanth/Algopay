@@ -59,7 +59,7 @@ export function NavBar() {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-2">
+  <div className="flex items-center gap-2">
           {/* Desktop collapse toggle */}
           <button className="hidden md:inline p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => toggleSidebar()} aria-label="Toggle sidebar">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 18h16"/></svg>
@@ -90,6 +90,9 @@ export function NavBar() {
               <Button data-testid={ids.connectMock} variant="ghost" onClick={enableMock} onKeyDown={(e) => handleKeyPress(e, enableMock)} aria-label="Enable mock wallet">Mock</Button>
             </div>
           )}
+          <NavLink to="/scanner" className="hidden sm:inline p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Open scanner">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="6" height="6" rx="1" /><rect x="15" y="3" width="6" height="6" rx="1" /><rect x="3" y="15" width="6" height="6" rx="1" /><rect x="15" y="15" width="6" height="6" rx="1" /></svg>
+          </NavLink>
           <ThemeToggle />
         </div>
       </div>

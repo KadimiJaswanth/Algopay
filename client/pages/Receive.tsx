@@ -2,11 +2,12 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ReceiveQR from '@/components/ReceiveQR';
 import { useWallet } from '@/context/WalletContext';
+import { DEFAULT_RECEIVE_ADDRESS } from '@/config/receive';
 
 const Receive: React.FC = () => {
 	const { address } = useWallet();
 
-	const shownAddress = address ?? 'ALGO-MOCK-ADDRESS-EXAMPLE-XYZ123';
+	const shownAddress = address ?? DEFAULT_RECEIVE_ADDRESS;
 
 		return (
 			<main className="p-4" role="main" aria-labelledby="receive-heading">

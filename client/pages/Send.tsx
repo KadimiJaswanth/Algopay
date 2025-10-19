@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,9 +7,13 @@ import { useWallet } from '@/context/WalletContext';
 import { formatAlgo } from '@/utils/formatters';
 import { pasteFromClipboard } from '@/utils/clipboard';
 import QrScanPlaceholder from '@/components/QrScanPlaceholder';
+import TransactionPreview from '@/components/TransactionPreview';
+import { validateAddress } from '@/utils/address';
+import { useLocation } from 'react-router-dom';
 
 export default function Send() {
 	const { address, balance, sendMockTxn } = useWallet();
+	const location = useLocation();
 	const [to, setTo] = useState('');
 	const [amount, setAmount] = useState('');
 	const [note, setNote] = useState('');
@@ -17,9 +21,18 @@ export default function Send() {
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [isSending, setIsSending] = useState(false);
 
+	useEffect(() => {
+		// Accept scanned value passed through navigation state { scanned }
+		const s: any = (location && (location as any).state) || null;
+		if (s && typeof s.scanned === 'string') {
+			setTo(s.scanned);
+		}
+	}, [location]);
+
 	function validate() {
 		const e: typeof errors = {};
-		if (!to || to.trim().length < 5) e.to = 'Enter a valid recipient address';
+		const addrResult = validateAddress(to);
+		if (!addrResult.valid) e.to = addrResult.reason || 'Enter a valid recipient address';
 		const amt = Number(amount);
 		if (isNaN(amt) || amt <= 0) e.amount = 'Enter a valid amount';
 		if (balance != null && amt > balance) e.amount = 'Insufficient balance';
@@ -91,6 +104,13 @@ export default function Send() {
 					</form>
 				</CardContent>
 			</Card>
+
+			{/* If form has valid-looking fields, show preview inline before dialog */}
+			{to && amount && validateAddress(to).valid && (
+				<div className="mt-4">
+					<TransactionPreview to={to} amount={Number(amount) || 0} note={note} />
+				</div>
+			)}
 
 						{/* QR scan modal/placeholder for now */}
 						<div className="mt-4">

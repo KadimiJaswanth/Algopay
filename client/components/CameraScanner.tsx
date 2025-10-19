@@ -1,217 +1,87 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button } from './ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { BrowserQRCodeReader } from '@zxing/library';
 import { decodeFromCanvas } from '@/utils/zxing';
 
-interface CameraScannerProps {
-  onScan: (value: string) => void;
-}
-
-export const CameraScanner: React.FC<CameraScannerProps> = ({ onScan }) => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const detectorRef = useRef<any>(null);
-  const pollRef = useRef<number | null>(null);
-  const { toast } = useToast();
-
-  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
-  const [permission, setPermission] = useState<'prompt' | 'granted' | 'denied' | 'unknown'>('unknown');
-  const [scanning, setScanning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [roiSize, setRoiSize] = useState<number>(0.6); // fraction of shorter side
-  const [lastCapture, setLastCapture] = useState<string | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    const enumDevices = async () => {
-      try {
-        const list = await navigator.mediaDevices.enumerateDevices();
-        if (!mounted) return;
-        const cams = list.filter((d) => d.kind === 'videoinput');
-        setDevices(cams);
-        if (cams.length && !selectedDeviceId) setSelectedDeviceId(cams[0].deviceId);
-      } catch (e) {
-        console.warn('enumerateDevices failed', e);
-      }
-    };
-    enumDevices();
-    return () => { mounted = false; };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      stopStream();
-    };
-  }, []);
-
-  const stopStream = () => {
-    setScanning(false);
-    if (pollRef.current) {
-      window.clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-    if (detectorRef.current) {
-      detectorRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  };
-
-  const startScanning = async () => {
-    setError(null);
-    if (!selectedDeviceId) {
-      setError('No camera device selected');
-      return;
-    }
-
-    try {
-      setPermission('prompt');
-      const s = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: selectedDeviceId } } });
-      streamRef.current = s;
-      if (videoRef.current) {
-        videoRef.current.srcObject = s;
-        await videoRef.current.play();
-      }
-      setPermission('granted');
-      setScanning(true);
-
-      // Use BarcodeDetector when available for reliable decoding
-      if ((window as any).BarcodeDetector) {
-        try {
-          const Detector = (window as any).BarcodeDetector;
-          detectorRef.current = new Detector({ formats: ['qr_code'] });
-          pollRef.current = window.setInterval(async () => {
-            try {
-              if (!videoRef.current) return;
-              const results = await detectorRef.current.detect(videoRef.current);
-              if (results && results.length) {
-                const r = results[0];
-                const raw = r.rawValue || r.displayValue || (r.raw && r.raw); 
-                if (raw) {
-                  onScan(String(raw));
-                }
-              }
-            } catch (err) {
-              // detection may fail intermittently
-            }
-          }, 500);
-          return;
-        } catch (err) {
-          console.warn('BarcodeDetector failed', err);
-        }
-      }
-
-      // Fallback: if BarcodeDetector not available, capture frames to a canvas and use ZXing to decode
-      try {
-        const canvas = document.createElement('canvas');
-        pollRef.current = window.setInterval(async () => {
-          try {
-            if (!videoRef.current) return;
-            const video = videoRef.current;
-            canvas.width = video.videoWidth || 320;
-            canvas.height = video.videoHeight || 240;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const decoded = await decodeFromCanvas(canvas);
-            if (decoded) {
-              onScan(String(decoded));
-            }
-          } catch (err) {
-            // ignore frame decode errors
-          }
-        }, 600);
-        toast({ title: 'Camera started', description: 'Camera started. Using fallback JS decoder.' });
-      } catch (err) {
-        toast({ title: 'Camera started', description: 'Camera started. If decoding is not available in your browser, use the simulate button.' });
-      }
-    } catch (err: any) {
-      console.error(err);
-      setPermission('denied');
-      setError(err?.message ?? 'Camera permission denied or not available');
-    }
-  };
-
-  const handleDeviceChange = (id: string) => {
-    setSelectedDeviceId(id);
-    // if currently scanning, restart with new device
-    if (scanning) {
-      stopStream();
-      setTimeout(() => startScanning(), 200);
-    }
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <label className="text-sm">Camera</label>
-        <select
-          aria-label="Select camera"
-          value={selectedDeviceId ?? ''}
-          onChange={(e) => handleDeviceChange(e.target.value)}
-          className="rounded border px-2 py-1"
-        >
-          {devices.map((d) => (
-            <option key={d.deviceId} value={d.deviceId}>{d.label || `Camera ${d.deviceId.slice(-4)}`}</option>
-          ))}
-        </select>
-        <Button onClick={() => (scanning ? stopStream() : startScanning())}>{scanning ? 'Stop' : 'Start'}</Button>
-      </div>
-
-      {error && <div role="alert" className="text-sm text-destructive">{error}</div>}
-
-      <div className="relative w-full rounded-md overflow-hidden bg-black/5">
-        <video ref={videoRef} className="w-full h-auto" playsInline muted />
-        {/* ROI overlay: centered square */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div
-            aria-hidden
-            className="border-2 border-dashed border-white/70 bg-white/10"
-            style={{ width: `${Math.round(roiSize * 100)}%`, height: `${Math.round(roiSize * 100)}%`, maxWidth: 'min(80%, 480px)', maxHeight: 'min(80%, 480px)' }}
-          />
-        </div>
-      </div>
-
-      <div className="text-xs text-muted-foreground">
-        Permission: {permission} · Scanning: {String(scanning)}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <label className="text-sm">ROI size</label>
-        <input aria-label="ROI size" type="range" min={0.2} max={1} step={0.05} value={roiSize} onChange={(e) => setRoiSize(Number(e.target.value))} />
-        <Button onClick={async () => {
-          if (!videoRef.current) return;
-          const video = videoRef.current;
-          const canvas = document.createElement('canvas');
-          const vw = video.videoWidth || 320;
-          const vh = video.videoHeight || 240;
-          const size = Math.min(vw, vh) * roiSize;
-          const sx = Math.max(0, Math.floor((vw - size) / 2));
-          const sy = Math.max(0, Math.floor((vh - size) / 2));
-          canvas.width = size;
-          canvas.height = size;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) return;
-          ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
-          const dataUrl = canvas.toDataURL('image/png');
-          setLastCapture(dataUrl);
-          const a = document.createElement('a');
-          a.href = dataUrl;
-          a.download = `capture-${Date.now()}.png`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-        }}>Capture & Download</Button>
-        {lastCapture && <a href={lastCapture} download className="text-sm text-muted-foreground">Last capture</a>}
-      </div>
-    </div>
-  );
+type CameraScannerProps = {
+  onResult: (text: string) => void;
+  onError?: (err: Error) => void;
 };
 
-export default CameraScanner;
+export default function CameraScanner({ onResult, onError }: CameraScannerProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const readerRef = useRef<BrowserQRCodeReader | null>(null);
+
+  useEffect(() => {
+    readerRef.current = new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 300 });
+    let mounted = true;
+
+    async function start() {
+      try {
+        setScanning(true);
+        const constraints = { video: { facingMode: 'environment' } } as MediaStreamConstraints;
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        if (!mounted) return;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+
+        const tick = async () => {
+          if (!mounted) return;
+          try {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            if (video && canvas) {
+              const w = video.videoWidth || 320;
+              const h = video.videoHeight || 240;
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext('2d');
+              if (ctx) ctx.drawImage(video, 0, 0, w, h);
+              // try decode from canvas
+              const text = await decodeFromCanvas(canvas);
+              if (text) {
+                onResult(text);
+                return; // stop after first result
+              }
+            }
+          } catch (err: any) {
+            // don't spam errors; pass upstream
+            onError?.(err);
+          }
+          setTimeout(tick, 250);
+        };
+
+        tick();
+      } catch (err: any) {
+        setScanning(false);
+        onError?.(err);
+      }
+    }
+
+    start();
+
+    return () => {
+      mounted = false;
+      setScanning(false);
+      try {
+        // stop any active tracks
+        const vid = videoRef.current;
+        const stream = vid?.srcObject as MediaStream | null;
+        stream?.getTracks().forEach((t) => t.stop());
+      } catch (e) {
+        // ignore
+      }
+    };
+  }, [onResult, onError]);
+
+  return (
+    <div className="w-full h-full flex flex-col items-center gap-2">
+      <video ref={videoRef} className="w-full max-h-[60vh] bg-black" playsInline muted />
+      <canvas ref={canvasRef} style={{ display: 'none' }} aria-hidden />
+      <div className="text-sm text-muted-foreground">{scanning ? 'Scanning...' : 'Camera stopped'}</div>
+    </div>
+  );
+}

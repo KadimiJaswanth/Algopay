@@ -8,6 +8,7 @@ import { formatAlgo } from '@/utils/formatters';
 import { pasteFromClipboard } from '@/utils/clipboard';
 import QrScanPlaceholder from '@/components/QrScanPlaceholder';
 import TransactionPreview from '@/components/TransactionPreview';
+import FeeEstimate from '@/components/FeeEstimate';
 import { validateAddress } from '@/utils/address';
 import { useLocation } from 'react-router-dom';
 

@@ -1,7 +1,7 @@
-import { defineConfig, Plugin } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { createServer } from "./server";
+import { pathToFileURL } from "url";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -36,15 +36,18 @@ export default defineConfig(({ mode }) => ({
   },
 }));
 
-function expressPlugin(): Plugin {
+function expressPlugin(): any {
   return {
     name: "express-plugin",
     apply: "serve", // Only apply during development (serve mode)
-    configureServer(server) {
-      const app = createServer();
+      async configureServer(server) {
+        // Dynamically import server to avoid loading dotenv at Vite config parse time
+    const serverPath = path.resolve(__dirname, "./server/index.ts");
+    const mod = await import(pathToFileURL(serverPath).href);
+        const app = await mod.createServer();
 
-      // Add Express app as middleware to Vite dev server
-      server.middlewares.use(app);
-    },
+        // Add Express app as middleware to Vite dev server
+        server.middlewares.use(app);
+      },
   };
 }

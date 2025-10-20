@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import ReceiveQR from '@/components/ReceiveQR';
+import ReceiveQRWrapper from '@/components/ReceiveQRWrapper';
 import { useWallet } from '@/context/WalletContext';
 import { DEFAULT_RECEIVE_ADDRESS } from '@/config/receive';
 
@@ -20,7 +20,7 @@ const Receive: React.FC = () => {
 							<p className="mb-4">Show this QR code to a sender to receive ALGO.</p>
 							<div className="flex flex-col md:flex-row md:items-start md:gap-8">
 								<div className="flex-1">
-									<ReceiveQR address={shownAddress} />
+									<ReceiveQRWrapper address={shownAddress} />
 								</div>
 								<aside className="flex-1 mt-6 md:mt-0" aria-label="Scan to pay hints">
 									<h3 className="text-lg font-semibold">Scan-to-pay hints</h3>

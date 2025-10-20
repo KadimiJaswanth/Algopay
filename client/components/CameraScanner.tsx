@@ -3,18 +3,31 @@ import { BrowserQRCodeReader } from '@zxing/library';
 import { decodeFromCanvas } from '@/utils/zxing';
 
 type CameraScannerProps = {
-  onResult: (text: string) => void;
+  onResult?: (text: string) => void;
+  onScan?: (text: string) => void; // alternate name used by tests
   onError?: (err: Error) => void;
 };
 
-export default function CameraScanner({ onResult, onError }: CameraScannerProps) {
+export default function CameraScanner({ onResult, onScan, onError }: CameraScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [scanning, setScanning] = useState(false);
   const readerRef = useRef<BrowserQRCodeReader | null>(null);
 
   useEffect(() => {
-    readerRef.current = new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 300 });
+    // BrowserQRCodeReader constructor in some @zxing versions accepts 0 or 1 arg.
+    // We don't need to instantiate with the second options parameter here since
+    // we decode from canvas frames using our helper `decodeFromCanvas`.
+    try {
+      // Attempt safe construction with no args where required
+      // keep the instance in case future APIs use it
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      readerRef.current = new BrowserQRCodeReader();
+    } catch (e) {
+      // ignore constructor mismatch; decodeFromCanvas handles decoding
+      readerRef.current = null;
+    }
     let mounted = true;
 
     async function start() {
@@ -43,7 +56,9 @@ export default function CameraScanner({ onResult, onError }: CameraScannerProps)
               // try decode from canvas
               const text = await decodeFromCanvas(canvas);
               if (text) {
-                onResult(text);
+                // support both prop names
+                onResult?.(text);
+                onScan?.(text);
                 return; // stop after first result
               }
             }

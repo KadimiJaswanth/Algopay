@@ -92,34 +92,10 @@ function runTsc() {
   }
 }
 
-function findStartIndex(dir, prefix) {
-  // scan dir for files like prefixNNN.tsx and return next index to use
-  if (!fs.existsSync(dir)) return 1;
-  const files = fs.readdirSync(dir);
-  const re = new RegExp('^' + prefix.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&') + '(\\d{3})\\.tsx$');
-  let max = 0;
-  for (const f of files) {
-    const m = f.match(re);
-    if (m) {
-      const n = Number(m[1]);
-      if (!Number.isNaN(n) && n > max) max = n;
-    }
-  }
-  return max + 1;
-}
-
 function main() {
   const { count, prefix, branch } = parseArgs();
   const uiDir = path.join(process.cwd(), 'client', 'components', 'ui');
   ensureDir(uiDir);
-
-  // determine starting index so we don't overwrite or duplicate existing files
-  let startIndex = 1;
-  try {
-    startIndex = findStartIndex(uiDir, prefix);
-  } catch (e) {
-    startIndex = 1;
-  }
 
   if (branch) {
     console.log(`Creating and switching to branch ${branch}`);
@@ -138,8 +114,7 @@ function main() {
     }
   }
 
-  for (let k = 0; k < count; k++) {
-    const i = startIndex + k;
+  for (let i = 1; i <= count; i++) {
     const name = `${prefix}${String(i).padStart(3, '0')}`;
     const file = writeComponent(uiDir, name, i);
     console.log(`Wrote ${file}`);

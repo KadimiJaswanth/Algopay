@@ -43,12 +43,13 @@ export default function PaymentsDemo() {
     console.log("View payment", id);
   };
 
-  const handleSaveRecurring = async (data: any) => {
+  const handleSaveRecurring = async (data: any): Promise<void> => {
     // this would normally POST to /api/payments/recurring
     // here we emulate network latency
     // eslint-disable-next-line no-console
     console.log("Saving recurring", data);
-    return new Promise((res) => setTimeout(res, 500));
+    await new Promise<void>((res) => setTimeout(() => res(), 500));
+    return;
   };
 
   return (

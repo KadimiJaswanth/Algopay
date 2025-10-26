@@ -9,7 +9,9 @@ export function fetchPayments(): Promise<Payment[]> {
 }
 
 export default function usePayments() {
-  const query = useQuery<Payment[], Error>(["payments"], fetchPayments, {
+  const query = useQuery<Payment[], Error>({
+    queryKey: ["payments"],
+    queryFn: fetchPayments,
     staleTime: 1000 * 60, // 1 minute
     retry: 1,
   });

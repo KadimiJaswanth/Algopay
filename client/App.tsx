@@ -17,6 +17,7 @@ import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import PaymentsDemo from "./pages/PaymentsDemo";
 import PaymentsList from "./pages/PaymentsList";
+import PaymentsExport from "./pages/PaymentsExport";
 import { NavBar } from "@/components/NavBar";
 import Layout from "@/components/Layout";
 import { UIProvider } from "@/context/UIContext";
@@ -46,6 +47,7 @@ const App = () => (
               {/* Demo page for payments components */}
               <Route path="/payments-demo" element={<Layout><PaymentsDemo /></Layout>} />
                 <Route path="/payments" element={<Layout><PaymentsList /></Layout>} />
+                <Route path="/payments-export" element={<Layout><PaymentsExport /></Layout>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -15,6 +15,7 @@ import Receive from "./pages/Receive";
 import Transactions from "./pages/Transactions";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import PaymentsDemo from "./pages/PaymentsDemo";
 import { NavBar } from "@/components/NavBar";
 import Layout from "@/components/Layout";
 import { UIProvider } from "@/context/UIContext";
@@ -41,6 +42,8 @@ const App = () => (
               <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
               <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
               <Route path="/settings" element={<Layout><Settings /></Layout>} />
+              {/* Demo page for payments components */}
+              <Route path="/payments-demo" element={<Layout><PaymentsDemo /></Layout>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
